@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="public/autosoc-logo.png" alt="AutoSOC Logo" width="150">
-</p>
 
 <p align="center">
   <img src="public/autosoc-banner.png" alt="AutoSOC Banner" width="600">
@@ -252,4 +249,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <p align="center">
   <strong>Part of the SecOps Command Center</strong><br>
   🍯 HoneyTrap • 🛡️ SentinelForge • 👁️ NexusWatch • ⚡ AutoSOC
+</p>
+<p align="center">
+  <img src="public/autosoc-logo.png" alt="AutoSOC Logo" width="100">
 </p>
