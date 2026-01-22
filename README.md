@@ -4,10 +4,9 @@
 </p>
 
 <p align="center">
-  <h1 align="center">⚡ AUTOSOC</h1>
+  <h1 align="center"> <em>Automate Response. Accelerate Resolution. Always On.</em></h1>
   <p align="center">
-    <em>Automate Response. Accelerate Resolution. Always On.</em>
-  </p>
+    
 </p>
 
 <p align="center">
