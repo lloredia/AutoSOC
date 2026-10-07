@@ -1,254 +1,232 @@
+<p align="center">
+  <img src="public/autosoc-banner.png" alt="AutoSOC banner" width="720">
+</p>
+
+<h1 align="center">AutoSOC</h1>
 
 <p align="center">
-  <img src="public/autosoc-banner.png" alt="AutoSOC Banner" width="600">
+  <em>Automate response. Accelerate resolution. Always on.</em><br>
+  Incident response orchestrator for the SecOps Command Center, with NexusWatch detection built in.
 </p>
 
 <p align="center">
-  <h1 align="center"> <em>Automate Response. Accelerate Resolution. Always On.</em></h1>
-  <p align="center">
-    
+  <img src="https://img.shields.io/badge/Node.js-24%20LTS-339933?style=flat&logo=node.js&logoColor=white" alt="Node.js 24">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black" alt="React 18">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="MIT license">
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-18.2-61DAFB.svg?style=flat&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/Vite-5.0-646CFF.svg?style=flat&logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
-</p>
+NexusWatch, the SIEM dashboard from [lloredia/nexuswatch](https://github.com/lloredia/nexuswatch), is consolidated into this repository. That repository was not modified. Its history is preserved here as the second parent of the merge commit, at source revision `ca0b57b1e52e2a999003ad4b3e4a953768791a77`.
 
-<p align="center">
-  <em>Built with the tools and technologies:</em>
-</p>
+## What AutoSOC does
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-61DAFB.svg?style=flat&logo=react&logoColor=black" alt="React">
-  <img src="https://img.shields.io/badge/Vite-646CFF.svg?style=flat&logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E.svg?style=flat&logo=javascript&logoColor=black" alt="JavaScript">
-  <img src="https://img.shields.io/badge/Python-3776AB.svg?style=flat&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Docker-2496ED.svg?style=flat&logo=docker&logoColor=white" alt="Docker">
-</p>
+AutoSOC is a local security-operations console with two jobs:
 
----
+1. **Detection (NexusWatch).** Ingest HoneyTrap-style events and normalized SIEM alerts, score them, and match them against a local indicator feed that stands in for SentinelForge.
+2. **Response (AutoSOC).** When an alert matches an enabled playbook, open an incident and walk the response steps. Analysts can pause, resume, abort, retry, and escalate.
 
-## 📖 Overview
+The original NexusWatch UI watched a random event stream. The original AutoSOC UI watched a random incident stream. They now share one in-memory pipeline, so a detection on the SIEM board is the same object the orchestrator responds to.
 
-AutoSOC is the Incident Response Orchestrator component of the SecOps Command Center - an automated platform that executes predefined playbooks to contain, investigate, and remediate security threats. It receives alerts from NexusWatch SIEM and coordinates response actions across your security infrastructure.
-
-## ✨ Features
-
-- **Automated Playbooks** - Pre-built response workflows for common incidents
-- **Real-Time Orchestration** - Live incident tracking with step-by-step progress
-- **Multi-Action Support** - Firewall, EDR, Email, IAM, Ticketing integrations
-- **Incident Control** - Pause/Resume/Abort/Retry/Escalate actions
-- **Live Metrics** - Running, completed, failed counts with success rates
-- **Playbook Management** - Enable/disable playbooks on the fly
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
-graph TB
-    subgraph Input
-        NW[👁️ NexusWatch<br/>SIEM Alerts]
-    end
+flowchart LR
+  subgraph sources [Sources]
+    HT[HoneyTrap JSONL]
+    SIEM[Firewall, EDR, IDS, WAF, DNS, email]
+    IOC[SentinelForge IOC feed<br/>local sample in the demo]
+  end
 
-    subgraph AutoSOC
-        TRG[Trigger Engine]
-        PB[Playbook Library]
-        EXEC[Execution Engine]
-        MON[Monitoring]
-    end
+  subgraph detect [NexusWatch detection]
+    ING[Ingest]
+    NORM[Normalize]
+    ENR[Enrich and score]
+    STREAM[Event stream]
+  end
 
-    subgraph Integrations
-        FW[🔥 Firewall]
-        EDR[💻 EDR]
-        EMAIL[📧 Email Security]
-        IAM[🔐 IAM]
-        TICKET[🎫 Ticketing]
-        SF[🛡️ SentinelForge]
-    end
+  subgraph respond [AutoSOC orchestrator]
+    MATCH[Playbook match]
+    INC[Incident]
+    EXEC[Step runner]
+  end
 
-    NW --> TRG
-    TRG --> PB
-    PB --> EXEC
-    EXEC --> FW
-    EXEC --> EDR
-    EXEC --> EMAIL
-    EXEC --> IAM
-    EXEC --> TICKET
-    EXEC --> SF
-    EXEC --> MON
+  UI[Console<br/>Detection and Response]
+
+  HT --> ING
+  SIEM --> ING
+  ING --> NORM --> ENR
+  IOC --> ENR
+  ENR --> STREAM --> UI
+  ENR --> MATCH --> INC --> EXEC --> UI
+  EXEC -->|block, isolate, ticket| ACT[Mock response actions]
 ```
-
-## 📊 Playbook Flow
 
 ```mermaid
 sequenceDiagram
-    participant NW as NexusWatch
-    participant AS as AutoSOC
-    participant FW as Firewall
-    participant EDR as EDR
-    participant TK as Ticketing
+  participant HT as HoneyTrap
+  participant NW as NexusWatch
+  participant SF as Indicator feed
+  participant AS as AutoSOC
+  participant AN as Analyst
 
-    NW->>AS: Critical Alert (BRUTE_FORCE)
-    AS->>AS: Match Playbook
-    AS->>FW: Step 1: Block Source IP
-    FW-->>AS: Success
-    AS->>EDR: Step 2: Collect Logs
-    EDR-->>AS: Success
-    AS->>TK: Step 3: Create Incident
-    TK-->>AS: Ticket Created
-    AS->>AS: Mark Complete
-    AS-->>NW: Incident Resolved
+  HT->>NW: ssh_brute_force JSONL
+  NW->>NW: Normalize to BRUTE_FORCE
+  NW->>SF: Look up source IP
+  SF-->>NW: Botnet, confidence 92
+  NW->>AS: Score 100, severity high
+  AS->>AS: Match Brute Force Response
+  AS->>AS: Block, enrich, collect, notify, ticket
+  AN->>AS: Pause, resume, abort, retry, or escalate
 ```
 
-## 📋 Pre-Built Playbooks
+## Features
 
-| Playbook | Trigger | Steps | Avg Time |
-|----------|---------|-------|----------|
-| **Brute Force Response** | `BRUTE_FORCE` | Block → Enrich → Forensics → Alert → Ticket | 2m 34s |
-| **Malware Containment** | `MALWARE_DETECTED` | Isolate → Kill → MemDump → Scan → Quarantine | 8m 12s |
-| **Data Exfiltration** | `DATA_EXFILTRATION` | Block → Kill Conn → PCAP → DLP → Legal Hold | 12m 45s |
-| **C2 Communication** | `C2_COMMUNICATION` | Sinkhole → Isolate → Hunt → Update Intel | 15m 22s |
-| **Phishing Response** | `PHISHING_DETECTED` | Quarantine → Extract IOCs → Block → Search | 5m 18s |
-| **Privilege Escalation** | `PRIVILEGE_ESCALATION` | Disable → Revoke → Audit → Hunt Lateral | 6m 42s |
+- NexusWatch event stream with severity filters, search, 24-hour timeline, attack-origin rollup, and data-source health
+- Indicator matching and the original bridge threat-score rules, including severity upgrades above confidence 80
+- Six response playbooks: brute force, malware containment, data exfiltration, command-and-control, phishing, and privilege escalation
+- Phishing stays disabled until an analyst turns it on. Alerts with no playbook stay on the detection board until someone investigates
+- Incident controls: pause, resume, abort, retry, escalate
+- Live demo clock that advances running playbooks and replays the sample catalog
+- Optional Python bridge for tailing a real HoneyTrap spool into `POST /api/events`
 
-## 🛠️ Tech Stack
+## Quick start
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| Frontend | React 18 | Dashboard UI |
-| Build Tool | Vite 5 | Fast development |
-| Styling | Inline CSS | Industrial aesthetic |
-| Fonts | Rajdhani, IBM Plex Mono | Tech/automation feel |
-| Logo | ReportLab | PDF vector graphics |
-
-## 📁 Project Structure
-
-```
-autosoc/
-├── src/
-│   ├── App.jsx              # Main orchestrator dashboard
-│   └── main.jsx             # React entry point
-├── public/
-│   ├── autosoc-logo.png     # Square logo
-│   └── autosoc-banner.png   # Wide banner
-├── scripts/
-│   └── generate_logo.py     # Logo generator
-├── index.html               # HTML template
-├── package.json             # Dependencies
-├── vite.config.js           # Vite configuration
-└── README.md
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+Requirements: Node.js 22 or newer. Node.js 24 is the current LTS and the version used in CI and the container image.
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/autosoc.git
-cd autosoc
-
-# Install dependencies
+git clone https://github.com/lloredia/AutoSOC.git
+cd AutoSOC
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Dashboard available at `http://localhost:3002`
+Open http://localhost:8080. The API listens on http://localhost:8787. The Vite dev server proxies `/api` to it.
 
-### Production Build
+Production-style local run, one process:
 
 ```bash
 npm run build
-npm run preview
+npm start
 ```
 
-## 🐳 Docker Deployment
+Then open http://localhost:8787.
 
-```dockerfile
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
+Container:
 
 ```bash
-docker build -t autosoc:latest .
-docker run -d -p 3002:80 autosoc:latest
+docker compose up --build
 ```
 
-## ⚙️ Available Actions
+The image serves the built console and the API on port 8787. Sample alerts are baked in, so no external HoneyTrap or SentinelForge service is required.
 
-| Action | Description | Integration |
-|--------|-------------|-------------|
-| `firewall_block` | Block IP at perimeter | Firewall API |
-| `edr_isolate` | Isolate endpoint | EDR API |
-| `edr_kill_process` | Terminate process | EDR API |
-| `sentinelforge_lookup` | Enrich with threat intel | SentinelForge |
-| `collect_logs` | Gather forensic logs | SIEM/Log API |
-| `email_quarantine` | Remove malicious email | Email API |
-| `dns_sinkhole` | Redirect malicious domain | DNS/Firewall |
-| `password_reset` | Force credential reset | IAM API |
-| `disable_account` | Disable user account | IAM API |
-| `create_incident` | Create ticket | Jira/ServiceNow |
-| `escalate` | Route to higher tier | Workflow |
+## Configuration
 
-## ⌨️ Keyboard Shortcuts
+Copy `.env.example` to `.env` to override defaults. The server reads `.env` without overriding variables that are already set. Do not commit `.env`.
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+L` | Toggle live mode on/off |
-| `Escape` | Close modal |
+| Variable               | Default                    | Purpose                                                    |
+| ---------------------- | -------------------------- | ---------------------------------------------------------- |
+| `PORT`                 | `8787`                     | API and production UI port                                 |
+| `HOST`                 | `0.0.0.0`                  | Bind address                                               |
+| `DEMO_MODE`            | `true`                     | Advance playbooks and replay samples while live mode is on |
+| `LIVE_INTERVAL_MS`     | `3000`                     | Demo tick interval                                         |
+| `SAMPLE_EVENTS_PATH`   | `data/sample-events.jsonl` | HoneyTrap and SIEM fixtures                                |
+| `SAMPLE_IOCS_PATH`     | `data/sample-iocs.json`    | Local stand-in for SentinelForge                           |
+| `HONEYTRAP_EVENTS_DIR` | `data`                     | Directory the Python bridge tails                          |
+| `SENTINELFORGE_API`    | empty                      | Real indicator API for the Python bridge                   |
+| `NEXUSWATCH_API`       | `http://localhost:8787`    | Where the bridge posts alerts                              |
 
-## 🔒 Security Considerations
+There are no credentials in this repository. The indicator feed is a JSON file of fictional addresses.
 
-- Store integration credentials in secure vault
-- Use service accounts with minimal permissions
-- Audit all playbook executions
-- Implement approval workflows for destructive actions
-- Test playbooks in isolated environment first
+## Demo walkthrough
 
-## 🗺️ SecOps Command Center Roadmap
+`npm run dev` loads `data/sample-events.jsonl` immediately. The dates are 22 January 2026, the day both original repositories were published.
 
-| # | Component | Status | Description |
-|---|-----------|--------|-------------|
-| 1 | HoneyTrap | ✅ Complete | Distributed honeypot network |
-| 2 | SentinelForge | ✅ Complete | Threat intelligence aggregator |
-| 3 | NexusWatch | ✅ Complete | SIEM Dashboard |
-| 4 | **AutoSOC** | ✅ Complete | Incident Response Orchestrator |
-| 5 | Compliance Engine | 🔜 Planned | Regulatory adherence tracking |
+1. Open **Response**. You should see running brute-force and exfiltration incidents, a paused privilege-escalation incident, a failed malware containment, and a completed command-and-control response.
+2. Open the failed malware incident (`EVT-MALWARE-0001`) and choose **Retry**. The playbook starts again from step 1.
+3. Open a running incident and choose **Pause**, then **Resume**. With live mode on, steps advance about every three seconds. **Ctrl+L** pauses the simulator. **Reset demo** restores the sample board.
+4. Switch to **Detection** with the tab, or press **1**. The same alerts are listed with threat scores. `185.220.101.45`, `45.155.205.77`, and `103.251.167.20` are indicator matches.
+5. Open the SQL injection event. It has no automated playbook. **Investigate** creates a manual investigation and jumps to Response.
+6. Enable **Phishing Response**. The existing phishing alert stays put. New phishing alerts received after that, or **Investigate** on `EVT-PHISH-0001`, open the phishing playbook.
+7. **Block IP** marks the detection blocked and counts the address in Blocked IPs. **Resolve** closes the detection without completing the incident.
 
-## 🤝 Contributing
+Keyboard: `1` detection, `2` response, `Ctrl+L` live mode, `Escape` closes a dialog.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Useful API calls:
 
-## 📄 License
+```bash
+curl -s http://localhost:8787/api/health
+curl -s http://localhost:8787/api/snapshot | head
+curl -s -X POST http://localhost:8787/api/events \
+  -H 'Content-Type: application/json' \
+  -d '{"event_type":"ssh_brute_force","service":"ssh","source_ip":"203.0.113.10","dest_ip":"10.0.1.50","dest_port":22}'
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+The Python bridge remains available for a file-based HoneyTrap spool:
 
----
+```bash
+python3 -m pip install -r requirements.txt
+python3 scripts/integration_bridge.py \
+  --honeytrap-dir ./data \
+  --nexuswatch http://localhost:8787 \
+  --no-enrichment
+```
 
-<p align="center">
-  <strong>Part of the SecOps Command Center</strong><br>
-  🍯 HoneyTrap • 🛡️ SentinelForge • 👁️ NexusWatch • ⚡ AutoSOC
-</p>
-<p align="center">
-  <img src="public/autosoc-logo.png" alt="AutoSOC Logo" width="100">
-</p>
+`--no-enrichment` skips the external SentinelForge call. The in-app pipeline already enriches from `data/sample-iocs.json`.
+
+## Project layout
+
+```
+.
+├── data/                  Sample HoneyTrap, SIEM, and indicator fixtures
+├── lib/                   Detection, scoring, playbooks, orchestrator, store
+├── server/                HTTP API and static hosting
+├── src/detection/         NexusWatch console
+├── src/response/          AutoSOC console
+├── scripts/integration_bridge.py
+├── public/                AutoSOC and NexusWatch marks
+└── docs/screenshots/      Screenshot placeholders
+```
+
+## Scripts
+
+| Command                | Purpose                               |
+| ---------------------- | ------------------------------------- |
+| `npm run dev`          | API plus Vite                         |
+| `npm test`             | Vitest                                |
+| `npm run lint`         | ESLint                                |
+| `npm run format:check` | Prettier                              |
+| `npm run build`        | Production bundle                     |
+| `npm start`            | Serve the bundle and API              |
+| `npm run audit`        | `npm audit` at high severity or above |
+
+GitHub Actions runs lint, format, test, build, and the audit on Node.js 24 for pushes and pull requests.
+
+## Screenshots
+
+Replace the placeholders below with captures from a local demo.
+
+| Detection                                                                   | Response                                                               |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| ![NexusWatch detection console placeholder](docs/screenshots/detection.svg) | ![AutoSOC response console placeholder](docs/screenshots/response.svg) |
+
+## Roadmap
+
+| Component                    | Status                                                                             | Where it lives                         |
+| ---------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------- |
+| HoneyTrap                    | External honeypot. This repo ships sample events in that shape.                    | Not in this repo                       |
+| SentinelForge                | External indicator service. The demo uses `data/sample-iocs.json`.                 | Not in this repo                       |
+| NexusWatch                   | Consolidated here as the detection pipeline and SIEM console.                      | `lib/`, `src/detection/`               |
+| AutoSOC                      | This orchestrator. The NexusWatch roadmap called the same role IronFlow.           | `lib/orchestrator.js`, `src/response/` |
+| Real control-plane adapters  | Planned. Firewall, EDR, email, IAM, and ticketing actions are named and simulated. | Playbook steps                         |
+| Authentication and audit log | Planned before any network exposure.                                               | —                                      |
+| Compliance engine            | Planned sibling, not part of this console.                                         | —                                      |
+
+## Security
+
+- No production tokens, cloud keys, or passwords are stored in this tree. If you add integrations, keep credentials in a secret store and out of git.
+- The demo binds an unauthenticated API. Keep it on localhost or a private network.
+- Response actions do not call real firewalls, EDR, or identity systems.
+- Deduplication in the in-app pipeline and in the Python bridge uses SHA-256. The original NexusWatch bridge used MD5 for that cache key.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

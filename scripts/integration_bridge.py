@@ -7,6 +7,12 @@ This script:
 1. Monitors HoneyTrap event files for new security events
 2. Enriches events with SentinelForge IOC data
 3. Forwards normalized events to NexusWatch
+
+Consolidated into AutoSOC (source commit ca0b57b1e52e2a999003ad4b3e4a953768791a77).
+The local demo uses the JavaScript pipeline in lib/ instead of this process.
+Normalized events are accepted at:
+  POST http://localhost:8787/api/events
+  POST http://localhost:8787/api/events/batch
 """
 
 import json
@@ -38,7 +44,7 @@ class Config:
     """Integration configuration"""
     honeytrap_events_dir: str = "./honeytrap/events"
     sentinelforge_api: str = "http://localhost:3001"
-    nexuswatch_api: str = "http://localhost:3000"
+    nexuswatch_api: str = "http://localhost:8787"
     poll_interval: int = 5  # seconds
     batch_size: int = 50
     enable_enrichment: bool = True
@@ -348,7 +354,7 @@ class EventProcessor:
             return None
         
         # Check for duplicates
-        event_hash = hashlib.md5(json.dumps(raw_event, sort_keys=True).encode()).hexdigest()
+        event_hash = hashlib.sha256(json.dumps(raw_event, sort_keys=True).encode()).hexdigest()
         if event_hash in self.processed_ids:
             return None
         self.processed_ids.add(event_hash)
@@ -543,8 +549,8 @@ def main():
     )
     parser.add_argument(
         "--nexuswatch",
-        default="http://localhost:3000",
-        help="NexusWatch API URL"
+        default="http://localhost:8787",
+        help="AutoSOC API URL (NexusWatch ingestion)"
     )
     parser.add_argument(
         "--interval",

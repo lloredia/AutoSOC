@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <rect width="1200" height="720" fill="#0a0e14"/>
+  <rect x="40" y="36" width="1120" height="72" rx="8" fill="#0b1218" stroke="#00d4ff" stroke-opacity="0.5"/>
+  <text x="64" y="80" fill="#00d4ff" font-family="ui-monospace, monospace" font-size="28">NexusWatch detection console</text>
+  <text x="64" y="160" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="20">Placeholder. Capture this view after npm run dev and replace this file.</text>
+  <rect x="64" y="210" width="1072" height="140" rx="8" fill="#0b1218" stroke="#00d4ff" stroke-opacity="0.35"/>
+  <rect x="64" y="370" width="1072" height="280" rx="8" fill="#0b1218" stroke="#334155"/>
+</svg>

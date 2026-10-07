@@ -1,0 +1,32 @@
+{
+  "185.220.101.45": {
+    "matches": [
+      {
+        "confidence": 92,
+        "threat_type": "botnet",
+        "tags": ["ssh", "scanner"],
+        "source": "SentinelForge"
+      }
+    ]
+  },
+  "45.155.205.77": {
+    "matches": [
+      {
+        "confidence": 88,
+        "threat_type": "apt",
+        "tags": ["sql-injection"],
+        "source": "SentinelForge"
+      }
+    ]
+  },
+  "103.251.167.20": {
+    "matches": [
+      {
+        "confidence": 95,
+        "threat_type": "ransomware",
+        "tags": ["endpoint"],
+        "source": "SentinelForge"
+      }
+    ]
+  }
+}
