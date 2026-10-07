@@ -1,20 +1,38 @@
 {
   "name": "autosoc",
-  "version": "1.0.0",
-  "description": "Incident Response Orchestrator - SecOps Command Center Component 4",
+  "version": "1.1.0",
+  "description": "Incident response orchestrator with NexusWatch detection",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.js",
+    "dev:api": "node --watch server/index.js",
+    "dev:web": "vite",
+    "start": "node server/index.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host --port 8080",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.0.0"
+    "@eslint/js": "^10.0.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "vite": "^8.0.0",
+    "vitest": "^5.0.3"
   }
 }

@@ -1,0 +1,22 @@
+services:
+  autosoc:
+    build: .
+    ports:
+      - '8787:8787'
+    environment:
+      PORT: 8787
+      HOST: 0.0.0.0
+      DEMO_MODE: 'true'
+      LIVE_INTERVAL_MS: '3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:8787/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
